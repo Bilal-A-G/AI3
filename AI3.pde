@@ -22,9 +22,10 @@ void setup()
   {
     for (int yOffset = 0; yOffset < gridSize; yOffset++)
     {
+      boolean rng = random(1) >= 0.2;
       cells[xOffset][yOffset] = new GridCell(gridCellSize, xOffset * gridCellSize, 
-        yOffset * gridCellSize, random(0, 1) > 0.0, false, false);
-      cells[xOffset][yOffset].currentColour = random(0, 1) > 0.0 ? color(255) : color(0);
+        yOffset * gridCellSize, rng, false, false);
+      cells[xOffset][yOffset].currentColour = rng ? color(255) : color(0);
     }
   }
   
@@ -43,55 +44,72 @@ void setup()
   
   GridCell current = start;
   current.SetFCost(0, null);
-  
-  println("First");
-  
+    
   while (currentIteration < maxIterations)
   {
     currentIteration ++;
+    
     int lowestFCost = open.get(0).fCost;
+    
+    
     //Set current to lowest fCost
-    for (int i = 0; i < open.size(); i++)
+    //Iterate through all open nodes
+    for (int i = 1; i < open.size(); i++)
     {
+      //If the open node has a lower FCost
       if (open.get(i).fCost < lowestFCost)
       {
+        //use that node and set it as best
         lowestFCost = open.get(i).fCost;
         current = open.get(i);
       }
     }
     
     //println(open.size());
-
+    
+    //Remove the current node from the open and add it to closed
     removeNodeFromOpen(current);
     closed.add(current);
+   
     
     //println(open.size());
     
+    //Check if the current is the end
     if (current.isEnd)
     {
-      print("Finished pathfinding");
       finishedPathfinding = true;
       break;
     }
     
     //current.currentColour = color(100, 200, 255);
     
+    //Find the best distance
     int xIndex = current.xPos/current.size;
     int yIndex = current.yPos/current.size;
     
+    //println("(" +  xIndex +  "," + yIndex + ")");
+    
+    //Gather the neighbouring cells
     GridCell[] neighbours = {
+      //Go up? one, if it is not in bounds, null else choose cell
       yIndex + 1 >= gridSize ? null : cells[xIndex][yIndex + 1],
+      //Go down
       yIndex - 1 < 0 ? null : cells[xIndex][yIndex - 1],
+      //Go left
       xIndex - 1 < 0 ? null : cells[xIndex - 1][yIndex],
+      //Go right
       xIndex + 1 >= gridSize ? null : cells[xIndex + 1][yIndex]
     };
     
-    for (int i = 0; i < 4; i++)
+    //Iterate through each neigbour
+    for (int i = 0; i < neighbours.length; i++)
     {
+      //Cache the currentNeighbour
+      
       GridCell currentNeighbour = neighbours[i];
-      if (currentNeighbour == null || 
-        isNodeInClosed(currentNeighbour) || 
-        !currentNeighbour.isTraversable)
+      if (currentNeighbour == null || //if it's null
+        isNodeInClosed(currentNeighbour) || //or it's already visited
+        !currentNeighbour.isTraversable) // or not traversable
       {
         continue;
       }
@@ -105,11 +123,24 @@ void setup()
         currentNeighbour.SetFCost(fCost, current);
         if (!isNodeInOpen(currentNeighbour))
         {
-          println("Added new node to open");
           open.add(currentNeighbour);
         }
       }
     }
+    if(open.size() == 0)
+    {
+      return;
+    }
+    current = open.get(0);
+  }
+  current = end;
+  
+  if(!finishedPathfinding) return;
+  
+  while(!current.isStart)
+  {
+    current = current.from;
+    current.currentColour = color(255,255,0);
   }
 }
 
